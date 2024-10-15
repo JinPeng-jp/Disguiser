@@ -6,7 +6,6 @@ import pulp as pl
 import math
 
 
-# 计算欧几里得距离
 def calculate_distance(user, server):
     R = 6371
     lat1, lon1 = np.radians(user)
@@ -20,7 +19,7 @@ def calculate_distance(user, server):
 
     return R * c * 1000
 
-#从原始数据集users.csv 和 servers.csv 中挑选指定数量的用户和服务器，并将挑选得到的用户以及服务器放在 selected_users.csv 和 selected_servers.csv 中，并返回选中的用户，服务器，服务器的覆盖半径，以及cov_initial矩阵
+
 def read_data(num_servers, num_users):
     users = pd.read_csv('users.csv').values
     servers = pd.read_csv('servers.csv').values
@@ -70,7 +69,6 @@ def read_data(num_servers, num_users):
 
     return np.array(selected_users), np.array(selected_servers), np.array(selected_radii), cov_initial
 
-#加密算法一：基于差分隐私的拉普拉斯加密算法
 def geo_laplace_encryption(users_file, laplace_encrypted_users_file, epsilon=0.5, min_dist=10, max_dist=60):
     def planar_laplace_mechanism(epsilon, lat, lon, min_dist, max_dist):
         earth_radius = 6371.0
@@ -111,10 +109,7 @@ def geo_laplace_encryption(users_file, laplace_encrypted_users_file, epsilon=0.5
     encrypted_users_df = encrypt_location(users_df, epsilon, min_dist, max_dist)
     encrypted_users_df.to_csv(laplace_encrypted_users_file, index=False)
 
-    print(f"加密后的用户数据已保存至 {laplace_encrypted_users_file}")
 
-
-#加密算法二：基于差分隐私的高斯加密算法
 def geo_gaussian_encryption(users_file, encrypted_users_file, epsilon=0.5, delta=1e-5, min_dist=10, max_dist=60):
     def planar_gaussian_mechanism(epsilon, delta, lat, lon, min_dist, max_dist):
         earth_radius = 6371.0
@@ -150,10 +145,6 @@ def geo_gaussian_encryption(users_file, encrypted_users_file, epsilon=0.5, delta
     encrypted_users_df = encrypt_location(users_df, epsilon, delta, min_dist, max_dist)
     encrypted_users_df.to_csv(encrypted_users_file, index=False)
 
-    print(f"加密后的用户数据已保存至 {encrypted_users_file}")
-
-
-# 计算用户位置通过拉普拉斯机制加密后的误差
 def calculate_position_error_laplace(selected_file='selected_users.csv', encrypted_file='laplace_encrypted_users.csv'):
     selected_users = pd.read_csv(selected_file).values
     encrypted_users = pd.read_csv(encrypted_file).values
@@ -166,7 +157,6 @@ def calculate_position_error_laplace(selected_file='selected_users.csv', encrypt
 
     return distance_differences
 
-# 计算用户位置通过高斯机制加密后的误差
 def calculate_position_error_gaussian(selected_file='selected_users.csv', encrypted_file='gaussian_encrypted_users.csv'):
     selected_users = pd.read_csv(selected_file).values
     encrypted_users = pd.read_csv(encrypted_file).values
@@ -180,7 +170,6 @@ def calculate_position_error_gaussian(selected_file='selected_users.csv', encryp
     return distance_differences
 
 
-#初分配方案方法一：运用求解器进行求解
 def Solver_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, r, omega, d):
     prob = pl.LpProblem("Edge_User_Allocation_P2", pl.LpMaximize)
     x = pl.LpVariable.dicts("x", (range(len(U)), range(len(S) + 1)), cat='Binary')
@@ -196,7 +185,7 @@ def Solver_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, r, 
 
     for i in range(len(U)):
         for j in range(len(S)):
-            distance_to_server = calculate_distance(U[i][:2], S[j][:2])  # 假设 U 和 S 存储了经纬度信息
+            distance_to_server = calculate_distance(U[i][:2], S[j][:2])  
             if distance_to_server >= r[j]:
                 prob += x[i][j] == 0, f"distance_limit_user_{i}_server_{j}"
 
@@ -219,8 +208,6 @@ def Solver_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, r, 
     return initial_f, initial_runtime, x_initial_i_j, x_initial_i_cloud
 
 
-
-#初分配方案二：LR-EUA+贪心
 def LR_EUA_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, omega, d, r):
     num_users = len(U)
     num_servers = len(S)
@@ -263,7 +250,6 @@ def LR_EUA_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, ome
     return initial_f, initial_runtime, x_initial_i_j, x_initial_i_cloud
 
 
-# 生成改进的默认解决方案
 def generate_default_solution(U, S, cov_noise, L_current, L_i_j, L_j):
     default_solution = []
     for i in range(len(U)):
@@ -274,7 +260,6 @@ def generate_default_solution(U, S, cov_noise, L_current, L_i_j, L_j):
             default_solution.append('cloud')
     return default_solution
 
-# 初分配方法三：遗传GA算法
 def GA_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, omega, d, r,pop_size=100, generations=500, mutation_rate=0.1, crossover_rate=0.8, early_stop_gen=50):
     num_users = len(U)
     num_servers = len(S)
@@ -367,7 +352,6 @@ def GA_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, omega, 
         else:
             no_improvement_count += 1
         if no_improvement_count >= early_stop_gen:
-            print(f"提前终止于第 {generation} 代")
             break
 
         new_population = []
@@ -395,7 +379,6 @@ def GA_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, omega, 
     return best_fitness, runtime, x_initial_i_j, x_initial_i_cloud
 
 
-# 再分配方案
 def reallocate_failed_users(U, S, L_j, L_i_j, c_i_j, c_i_cloud, x_initial_i_j, x_initial_i_cloud, cov_initial, r, omega, d):
     start_time = time.time()
     x_final_i_j = np.copy(x_initial_i_j)
@@ -440,9 +423,8 @@ def reallocate_failed_users(U, S, L_j, L_i_j, c_i_j, c_i_cloud, x_initial_i_j, x
            np.sum([c_i_j[i][j] * x_final_i_j[i][j] for i in range(len(U)) for j in range(len(S))])) / C_max
 
     final_cost = omega[0] * F_u + omega[1] * F_g - omega[2] * F_c
-    #计算真正的初分配目标函数值
     if successful_users:
-        F_u_initial = np.sum(x_initial_i_j[successful_users]) / len(successful_users)  # 初次成功用户的分配率
+        F_u_initial = np.sum(x_initial_i_j[successful_users]) / len(successful_users) 
         F_g_initial = np.sum([d[i] * x_initial_i_j[i][j] / (len(successful_users) * r[j]) for i in successful_users for j in range(len(S))])
         F_c_initial = (np.sum([c_i_cloud[i] * x_initial_i_cloud[i] for i in successful_users]) +
                        np.sum([c_i_j[i][j] * x_initial_i_j[i][j] for i in successful_users for j in range(len(S))])) / C_max
@@ -455,7 +437,6 @@ def reallocate_failed_users(U, S, L_j, L_i_j, c_i_j, c_i_cloud, x_initial_i_j, x
 
     return F_u,F_g,F_c,final_cost, runtime, x_final_i_j, x_final_i_cloud,f_true_initial
 
-# 结果筛选函数
 def filter_results(method_results, num_repeats):
     filtered_fu = []
     filtered_fp = []
@@ -521,8 +502,6 @@ def filter_results(method_results, num_repeats):
     return filtered_fu, filtered_fp, filtered_fc, filtered_f_initial, filtered_f_final, filtered_time_total
 
 
-
-# 参数定义
 mean = 8
 num_servers = 15
 num_users = 100
@@ -537,10 +516,7 @@ epsilon = math.log(2)
 min_dist = 10
 max_dist = 60
 delta=1e-5
-
-# 调用laplace加密函数
 geo_laplace_encryption(users_file,laplace_encrypted_users_file,epsilon,min_dist, max_dist)
-# 调用Gauss加密函数
 geo_gaussian_encryption(users_file, gaussian_encrypted_users_file, epsilon, delta, min_dist, max_dist)
 L_j = np.random.normal(mean, 1, size=len(S))
 L_i_j = np.ones((len(U), len(S)), dtype=int)
@@ -548,8 +524,6 @@ c_i_j = np.random.rand(len(U), len(S))
 c_i_cloud = np.random.rand(len(U)) * 3
 d_laplace = calculate_position_error_laplace()
 d_gaussian = calculate_position_error_gaussian()
-
-#获得模糊后的覆盖矩阵cov_laplace
 cov_laplace = np.zeros((len(U), len(S)), dtype=int)
 encrypted_users = pd.read_csv('laplace_encrypted_users.csv').values
 for i in range(len(U)):
@@ -561,10 +535,8 @@ for i in range(len(U)):
             cov_laplace[i, j] = 1
 # print('cov_laplace',cov_laplace)
 
-#获得模糊后的覆盖矩阵 cov_gaussian
 cov_gaussian = np.zeros((len(U), len(S)), dtype=int)
 encrypted_users = pd.read_csv('gaussian_encrypted_users.csv').values
-# 根据模糊后位置得到的覆盖矩阵
 for i in range(len(U)):
     user_location = encrypted_users[i][:2]
     for j in range(len(S)):
