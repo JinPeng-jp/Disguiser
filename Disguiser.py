@@ -110,8 +110,6 @@ def geo_laplace_encryption(users_file, laplace_encrypted_users_file, epsilon=0.5
     encrypted_users_df = encrypt_location(users_df, epsilon, min_dist, max_dist)
     encrypted_users_df.to_csv(laplace_encrypted_users_file, index=False)
 
-    # print(f"加密后的用户数据已保存至 {laplace_encrypted_users_file}")
-
 
 def geo_gaussian_encryption(users_file, encrypted_users_file, epsilon=0.5, delta=1e-5, min_dist=10, max_dist=60):
     def planar_gaussian_mechanism(epsilon, delta, lat, lon, min_dist, max_dist):
@@ -147,8 +145,6 @@ def geo_gaussian_encryption(users_file, encrypted_users_file, epsilon=0.5, delta
     users_df = pd.read_csv(users_file)
     encrypted_users_df = encrypt_location(users_df, epsilon, delta, min_dist, max_dist)
     encrypted_users_df.to_csv(encrypted_users_file, index=False)
-
-    # print(f"加密后的用户数据已保存至 {encrypted_users_file}")
 
 
 def calculate_position_error_laplace(selected_file='selected_users.csv', encrypted_file='laplace_encrypted_users.csv'):
@@ -192,7 +188,7 @@ def Solver_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, r, 
 
     for i in range(len(U)):
         for j in range(len(S)):
-            distance_to_server = calculate_distance(U[i][:2], S[j][:2])  # 假设 U 和 S 存储了经纬度信息
+            distance_to_server = calculate_distance(U[i][:2], S[j][:2])
             if distance_to_server >= r[j]:
                 prob += x[i][j] == 0, f"distance_limit_user_{i}_server_{j}"
 
@@ -361,7 +357,6 @@ def GA_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, omega, 
         else:
             no_improvement_count += 1
         if no_improvement_count >= early_stop_gen:
-            # print(f"提前终止于第 {generation} 代")
             break
 
         new_population = []
@@ -379,7 +374,6 @@ def GA_initial_allocation(U, S, c_i_j, c_i_cloud, L_j, L_i_j, cov_noise, omega, 
     x_initial_i_cloud = np.zeros(num_users)
 
     if best_solution is None:
-        # print("未找到最佳解，返回改进的默认解。")
         best_solution = generate_default_solution(U, S, cov_noise, L_current, L_i_j, L_j)
     for i in range(num_users):
         if best_solution[i] == 'cloud':
